@@ -1,1 +1,18 @@
 2025-11-08 19:08:05.895 [DEBUG] Inizio processo gestione
+2025-11-08 19:37:47.255 [DEBUG] Inizio processo gestione
+2025-11-08 19:37:47.271 [INFO] Inizio gestione servizio alphaservice
+2025-11-08 19:38:17.871 [DEBUG] Inizio processo gestione
+2025-11-08 19:38:17.891 [INFO] Inizio gestione servizio alphaservice
+2025-11-08 19:38:53.179 [DEBUG] Inizio processo gestione
+2025-11-08 19:39:08.398 [INFO] Inizio gestione servizio alphaservice
+2025-11-08 19:42:18.699 [DEBUG] Inizio processo gestione
+2025-11-08 19:42:22.811 [INFO] Inizio gestione servizio alphaservice
+2025-11-08 19:42:55.890 [FATAL] Library mysql.jdbc not found
+2025-11-08 19:42:56.508 [DEBUG] Inizio processo gestione
+2025-11-08 19:43:01.470 [INFO] Inizio gestione servizio alphaservice
+2025-11-08 19:43:04.491 [FATAL] Library mysql.jdbc not found
+2025-11-08 19:45:24.933 [DEBUG] Inizio processo gestione
+2025-11-08 19:45:28.080 [INFO] Inizio gestione servizio alphaservice
+2025-11-08 19:45:37.123 [DEBUG] SELECT `servizio` FROM `last_report` WHERE `servizio` LIKE 'alphaservice'
+2025-11-08 19:45:37.155 [DEBUG] Risultato: alphaservice
+2025-11-08 19:45:51.089 [INFO] Inizio gestione servizio prova

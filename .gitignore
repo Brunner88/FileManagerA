@@ -27,3 +27,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Ignore all files inside /logs
+logs/*
+# But keep the folder itself (so it stays in repo)
+!logs/.gitkeep
