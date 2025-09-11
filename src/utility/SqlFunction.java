@@ -10,6 +10,9 @@ public class SqlFunction {
 
     private final Logging logger;
     private final Connection connection;
+    private static final  String RESULT = "Risultato: ";
+    private static final String IMPOSSIBLE = "Impossibile ottenere i dati per la query ";
+    private static final String NO_CONNECTION = "Impossibile connecttersi al db";
 
     public SqlFunction(Logging logger, String db, String dbUser, String dbPass) {
         this.logger = logger;
@@ -36,7 +39,7 @@ public class SqlFunction {
             return DriverManager.getConnection(db, dbUser, dbPass);
         } catch (SQLException e) {
             e.printStackTrace();
-            logger.printLog("Impossibile connecttersi al db", FATAL);
+            logger.printLog(NO_CONNECTION, FATAL);
             System.exit(1);
         }
         return null;
@@ -80,11 +83,11 @@ public class SqlFunction {
             stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
-            logger.printLog("Impossibile connecttersi al db", FATAL);
+            logger.printLog(NO_CONNECTION, FATAL);
             System.exit(1);
         }
 
-        logger.printLog("Risultato: " + res, DEBUG);
+        logger.printLog(RESULT + res, DEBUG);
 
         return res;
     }
@@ -146,7 +149,7 @@ public class SqlFunction {
             stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
-            logger.printLog("Impossibile connecttersi al db", FATAL);
+            logger.printLog(NO_CONNECTION, FATAL);
             System.exit(1);
         }
     }
@@ -159,5 +162,79 @@ public class SqlFunction {
             logger.printLog("Errori nell'esecuzione della query", FATAL);
             System.exit(1);
         }
+    }
+
+    /**
+     * controlla tutti i rapporti della tabella last_report per un servizio e torna la data più vecchia
+     *
+     * @param servizio nome del servizio
+     * @return String contente la data in formato yyyyMMdd
+     */
+    public String readOldestDateString(String servizio) {
+        int res = 0;
+
+        String sql = "SELECT `subscriptions`,`unsubscriptions`,`billing` " +
+                "FROM `last_report` " +
+                "WHERE `servizio` = '" + servizio + "'";
+
+        logger.printLog("readOldestDateString: " + sql, DEBUG);
+
+        try {
+
+            Statement stmt = connection.createStatement();
+
+            res = readOldestDateStringExecute(stmt, sql);
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(NO_CONNECTION, FATAL);
+            System.exit(1);
+        }
+
+        logger.printLog(RESULT + res, DEBUG);
+
+        return "" + res;
+    }
+
+    private int readOldestDateStringExecute(Statement stmt, String sql){
+        int res = 0;
+        try {
+            ResultSet rs = stmt.executeQuery(sql);
+            //scorro il resultset e salvo solo da data più vecchia
+            while (rs.next()) {
+
+                int[] result = {
+                        Integer.parseInt(rs.getString("subscriptions")),
+                        Integer.parseInt(rs.getString("unsubscriptions")),
+                        Integer.parseInt(rs.getString("billing"))
+                };
+
+                int j = 0;
+
+                for (int i = 0; i < result.length; i++) {
+
+                    if (result[i] <= result[j]) {
+                        res = result[i];
+                        j = i;
+                    }
+
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(IMPOSSIBLE + sql, FATAL);
+            System.exit(1);
+        }
+        return  res;
+    }
+
+    /**
+     * Chiude la connessione al db
+     *
+     * @throws SQLException
+     */
+    public void closeConnection() throws SQLException {
+        connection.close();
     }
 }
