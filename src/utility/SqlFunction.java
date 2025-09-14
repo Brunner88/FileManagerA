@@ -3,8 +3,7 @@ package utility;
 import java.sql.*;
 import java.util.Arrays;
 
-import static utility.Logging.logLevel.DEBUG;
-import static utility.Logging.logLevel.FATAL;
+import static utility.Logging.logLevel.*;
 
 public class SqlFunction {
 
@@ -13,6 +12,7 @@ public class SqlFunction {
     private static final  String RESULT = "Risultato: ";
     private static final String IMPOSSIBLE = "Impossibile ottenere i dati per la query ";
     private static final String NO_CONNECTION = "Impossibile connecttersi al db";
+    private static final String PROCESSED = "processed";
 
     public SqlFunction(Logging logger, String db, String dbUser, String dbPass) {
         this.logger = logger;
@@ -236,5 +236,143 @@ public class SqlFunction {
      */
     public void closeConnection() throws SQLException {
         connection.close();
+    }
+
+    /**
+     * legge l'ultima data processata per un report per un servizio
+     *
+     * @param report   nome del report (subscription, unsubscription...)
+     * @param servizio nome del servizio
+     * @return int che contiene la data formattata (yyyyMMdd) dell'ultimo report processato per il servizio
+     */
+    public int readDateString(String report, String servizio) {
+
+        String sql = "SELECT `" + report + "` " +
+                "FROM `last_report` " +
+                "WHERE `servizio` = '" + servizio + "' LIMIT 1";
+
+        String res = executeSqlQueryString(sql, report);
+
+        return res != null ? Integer.parseInt(res) : 0;
+    }
+
+    /**
+     * Controlla se esiste una determinata data nella tabella SERVIZIO_subscriber e nella tabella SERVIZIO_billing
+     *
+     * @param servizio nome del servizio
+     * @param data     data da cercare (formato yyyyMMdd)
+     * @return boolean true se presente, false altrimenti
+     */
+    public boolean existDate(String servizio, String data) {
+
+        int sub = executeSqlQueryInt("SELECT COUNT(`date`) as found " +
+                "FROM `" + servizio + "_subscriber` " +
+                "WHERE `date` LIKE '" + data + "'", "found");
+
+        int bill = executeSqlQueryInt("SELECT COUNT(`date`) as found " +
+                "FROM `" + servizio + "_billing` " +
+                "WHERE `date` LIKE '" + data + "'", "found");
+
+        if (sub != bill) {
+            logger.printLog("Errore le tabelle " + servizio + "_subscriber e " + servizio + "_billing presentano date disallineate", FATAL);
+            System.exit(1);
+        }
+
+        return sub != 0;
+
+    }
+
+    /**
+     * Esegue una interrogazione del db (singola colonna, singola riga)
+     *
+     * @param sql    la query da eseguire
+     * @param column la colonna nella quale cercare il dato aggregato
+     * @return int contentente il valore ottenuto
+     */
+    public int executeSqlQueryInt(String sql, String column) {
+
+        int res = 0;
+        try {
+            logger.printLog("executeSqlQueryInt: " + sql, DEBUG);
+            Statement stmt = connection.createStatement();
+
+            res = executeStatementQuerySingleInt(stmt, sql, column);
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(NO_CONNECTION, FATAL);
+            System.exit(1);
+        }
+
+        logger.printLog(RESULT + res, DEBUG);
+        return res;
+    }
+
+    private int executeStatementQuerySingleInt(Statement stmt, String sql, String column){
+        int res = 0;
+        try {
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                res = rs.getInt(column);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(IMPOSSIBLE + sql, ERROR);
+            System.exit(1);
+        }
+
+        return res;
+    }
+
+    /**
+     * inserisce la data nella tabella tab
+     *
+     * @param data la data da inserire
+     * @param tab  la tabella in cui inserire
+     */
+    public void insertDate(Date data, String tab) {
+
+        executeSqlInsertUpdate("INSERT INTO `" + tab + "` (`date`) VALUES ('" + data + "') ");
+
+    }
+
+    /**
+     * Controlla se una determinata data nella tabella SERVIZIO_subscriber e nella tabella SERVIZIO_billing è stata già processata
+     *
+     * @param servizio nome del servizio
+     * @param data     data da cercare (formato yyyyMMdd)
+     * @return boolean true se presente, false altrimenti
+     */
+    public boolean alreadyProcessed(String servizio, String data) {
+
+        int sub = executeSqlQueryInt("SELECT processed " +
+                "FROM `" + servizio + "_subscriber` " +
+                "WHERE `date` LIKE '" + data + "'", PROCESSED);
+
+        int bill = executeSqlQueryInt("SELECT processed " +
+                "FROM `" + servizio + "_billing` " +
+                "WHERE `date` LIKE '" + data + "'", PROCESSED);
+
+        return sub == 1 && bill == 1;
+    }
+
+    /**
+     * Imposta una riga della tabella SERVIZIO_subscriber e della tabella SERVIZIO_billing come non processate (processed = 2)
+     *
+     * @param servizio         nome servizio
+     * @param dataDaProcessare data da settare a non processata in formato yyyy-mm-dd
+     */
+    public void setAsNotProcessed(String servizio, String dataDaProcessare) {
+
+        executeSqlInsertUpdate("UPDATE `" + servizio + "_subscriber` " +
+                "SET `processed` = '2'  " +
+                "WHERE `date` = '" + dataDaProcessare + "'"
+        );
+
+        executeSqlInsertUpdate("UPDATE `" + servizio + "_billing` " +
+                "SET `processed` = '2'  " +
+                "WHERE `date` = '" + dataDaProcessare + "'"
+        );
     }
 }
