@@ -141,6 +141,7 @@ public class Main {
                     report, dataDaProcessare.substring(6, 8), mese, anno, servizio), WARNING);
         }
 
-        //TODO chiusura giorno
+        db.updateLastReport(report, servizio, dataDaProcessare);
+        if (db.confrontaDataString(servizio, report)) manage.closeDay(dataSql, specialManage);
     }
 }
