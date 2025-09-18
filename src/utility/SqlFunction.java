@@ -505,4 +505,77 @@ public class SqlFunction {
                 "WHERE `date` = '" + data + "'"
         );
     }
+
+    /**
+     * svuota la tabella tab
+     *
+     * @param tab tabella da svuotare
+     */
+    public void svuotaTabella(String tab) {
+
+        try {
+            Statement stmt = connection.createStatement();
+
+            String sql = "TRUNCATE " + tab;
+
+            logger.printLog("svuotaTabella: " + sql, DEBUG);
+
+            svuotaTabellaExecute(stmt, sql, tab);
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(NO_CONNECTION, FATAL);
+            System.exit(1);
+        }
+    }
+
+    /**
+     * riempe la tabella tab con i dati prelevati dal path specificato
+     *
+     * @param tab  tabella da riempire
+     * @param path il path del file da cui prelevare i dati
+     */
+    public void riempiTabella(String tab, String path) {
+
+        try {
+            Statement stmt = connection.createStatement();
+
+            String sql = "LOAD data LOCAL INFILE  '" + path + "' " +
+                    "INTO TABLE " + tab + " " +
+                    "FIELDS TERMINATED BY  ',' " +
+                    "LINES TERMINATED BY  '\n' " +
+                    "IGNORE 1 LINES";
+
+            logger.printLog("Load csv in mySql: " + sql, DEBUG);
+
+            riempiTabellaExecute(stmt, tab, sql);
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(NO_CONNECTION, FATAL);
+            System.exit(1);
+        }
+    }
+
+    private void svuotaTabellaExecute(Statement stmt, String sql, String tab){
+        try {
+            stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog("Errore nello svuotamento della tabella " + tab, ERROR);
+            System.exit(1);
+        }
+    }
+
+    private void riempiTabellaExecute(Statement stmt, String tab, String sql){
+        try {
+            stmt.executeQuery(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog("Errore nel caricamento della tabella " + tab, ERROR);
+            System.exit(1);
+        }
+    }
 }
