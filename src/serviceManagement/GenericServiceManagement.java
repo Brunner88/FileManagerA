@@ -77,7 +77,10 @@ public class GenericServiceManagement {
                 }
                 return false;
             case "unsubscriptions":
-
+                if(gestisciUnsubscription(sqlDateLastReport)) {
+                    logger.printLog(logText, INFO);
+                    return true;
+                }
                 return false;
             case "billing":
 
@@ -154,6 +157,109 @@ public class GenericServiceManagement {
             String sqlUpdateString = "UPDATE `" + SERVIZIO + "_subscriber` SET " +
                     String.join(",", sqlUpdateProducts) + "," +
                     String.join(",", sqlUpdateSources) +
+                    "WHERE `date` = '" + dataLastReport + "'";
+
+            connection.executeSqlInsertUpdate(sqlUpdateString);
+        }
+        return true;
+    }
+
+    /**
+     * gestisce la lettura della tabella unsubscription temporanea e l'inserimento dei dati del rapporto di unsubscription
+     * nella tabella SERVIZIO_unsubscription
+     *
+     * @param dataLastReport data in formato sql Date in cui verranno inseriti i dati
+     */
+    private static boolean gestisciUnsubscription(Date dataLastReport) {
+
+        //conteggio n° desottoscrizioni per prodotto
+        String query = "SELECT COUNT(*) as total, `product` " +
+                "FROM `unsubscriptions_temp` " +
+                "GROUP BY `product`;";
+
+        List<ElementCount> dayUnsubs = connection.executeSqlQueryElementCount(query, "total", "product");
+
+        //preparo array stringa per inserimento, per la dimensione uso il più piccolo fra la dimensione della lista e i prodotti della config,
+        // nel caso nel report fossero presenti più elementi del dovuto
+        String[] sqlUpdateProducts = new String[Math.min(dayUnsubs.size(), products.length)];
+        int i = 0;
+        for (ElementCount ec : dayUnsubs) {
+            if (isInProductsArray(ec.getElement(), products)) {
+                sqlUpdateProducts[i] = " `unsub_" + ec.getElement() + "`= '" + ec.getTotal() + "' ";
+                i++;
+            } else {
+                logger.printLog("Attenzione: nel report unsubscriptions per il servizio " + SERVIZIO +
+                        " è stato trovato un prodotto (" + ec.getElement() + ") non appartenente al servizio. " +
+                        "Il prodotto è stato ignorato, se si desidera processarlo aggiornare le tabelle e la configurazione del servizio.", WARNING);
+            }
+        }
+
+        //conteggio n° per fonte di desottoscrizione per prodotto
+        query = "SELECT COUNT(*) as total, `source` " +
+                "FROM `unsubscriptions_temp` " +
+                "GROUP BY `source`;";
+
+        List<ElementCount> sourceUnsubs = connection.executeSqlQueryElementCount(query, "total", "source");
+
+        //preparo array stringa per inserimento, per la dimensione uso il più piccolo fra la dimensione della lista e le fonti della config,
+        // nel caso nel report fossero presenti più elementi del dovuto
+        String[] sqlUpdateSources = new String[Math.min(sourceUnsubs.size(), sources.length)];
+        i = 0;
+        for (ElementCount ec : sourceUnsubs) {
+            if (isInArray(ec.getElement(), sources)) {
+                sqlUpdateSources[i] = " `unsub_" + ec.getElement() + "`= '" + ec.getTotal() + "' ";
+                i++;
+            } else {
+                logger.printLog("Attenzione: nel report unsubscriptions per il servizio " + SERVIZIO +
+                        " è stata trovata una fonte (" + ec.getElement() + ") non appartenente al servizio. " +
+                        "La fonte è stata ignorata, se si desidera processarla aggiornare le tabelle e la configurazione del servizio.", WARNING);
+            }
+        }
+
+        //conteggio motivazioni desottoscrizione
+        query = "SELECT COUNT(*) as total, `reason` " +
+                "FROM `unsubscriptions_temp` " +
+                "GROUP BY `reason`;";
+
+        List<ElementCount> reasonsUnsubs = connection.executeSqlQueryElementCount(query, "total", "reason");
+
+        //preparo array stringa per inserimento, per la dimensione uso il più piccolo fra la dimensione della lista e le motivazioni della config,
+        // nel caso nel report fossero presenti più elementi del dovuto
+        String[] sqlUpdateReasons = new String[Math.min(reasonsUnsubs.size(), reasons.length)];
+        i = 0;
+        for (ElementCount ec : reasonsUnsubs) {
+            if (isInArray(ec.getElement(), reasons)) {
+                if ("".equals(ec.getElement())) {
+                    sqlUpdateReasons[i] = " `unsub_UNKNOWN`= '" + ec.getTotal() + "' ";
+                } else {
+                    sqlUpdateReasons[i] = " `unsub_" + ec.getElement() + "`= '" + ec.getTotal() + "' ";
+                }
+                i++;
+            } else {
+                logger.printLog("Attenzione: nel report unsubscriptions per il servizio " + SERVIZIO +
+                        " è stata trovata una motivazione (" + ec.getElement() + ") non appartenente al servizio. " +
+                        "La motivazione è stata ignorata, se si desidera processarla aggiornare le tabelle e la configurazione del servizio.", WARNING);
+            }
+        }
+
+        if(containsNull(sqlUpdateProducts)){
+            logger.printLog("ATTENZIONE: i dati dei prodotti di unsub ricevuti per il report di subscription per il servizio " + SERVIZIO +
+                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
+            return false;
+        }else if(containsNull(sqlUpdateSources)){
+            logger.printLog("ATTENZIONE: i dati delle fonti di unsub ricevuti per il report di subscription per il servizio " + SERVIZIO +
+                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
+            return false;
+        }else if(containsNull(sqlUpdateReasons)){
+            logger.printLog("ATTENZIONE: i dati delle motivazioni di unsub ricevuti per il report di subscription per il servizio " + SERVIZIO +
+                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
+            return false;
+        }else{
+            //inserisco nella tabella
+            String sqlUpdateString = "UPDATE `" + SERVIZIO + "_subscriber` SET " +
+                    String.join(",", sqlUpdateProducts) + "," +
+                    String.join(",", sqlUpdateSources) + "," +
+                    String.join(",", sqlUpdateReasons) +
                     "WHERE `date` = '" + dataLastReport + "'";
 
             connection.executeSqlInsertUpdate(sqlUpdateString);
