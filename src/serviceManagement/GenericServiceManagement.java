@@ -23,7 +23,9 @@ public class GenericServiceManagement {
     private static Product[] products;
     private static String[] sources;
     private static String[] reasons;
-    private static String SERVIZIO = "";
+    private static String servizio = "";
+    private static final String CONTA = "conta";
+    private static final String WARNING_TXT = "ATTENZIONE: i dati %s ricevuti per il report di subscription per il servizio %s del giorno %s non corrispondono alla configurazione";
 
     /**
      * gestione dei report per il servizio generico
@@ -32,21 +34,21 @@ public class GenericServiceManagement {
      * @param table             tabelle temporanee da lavorare
      * @param fileSystem        locazione del file da elaborare
      * @param nomeFile          nome file da elaborare
-     * @param date_to_string    data da elaborare in formato string
+     * @param dateToString    data da elaborare in formato string
      * @param sqlDateLastReport data da elaborare in formato sql
      * @param dbConnection      connessione al db
      * @param fileLogger        log
      * @return boolean contenente esito del processo
-     * @throws IOException
      */
-    public static boolean gestisci(String service, String report, String table, String fileSystem, String nomeFile, String date_to_string, Date sqlDateLastReport, SqlFunction dbConnection, Logging fileLogger) throws IOException {
+    public static boolean gestisci(String service, String report, String table, String fileSystem, String nomeFile,
+                                   String dateToString, Date sqlDateLastReport, SqlFunction dbConnection, Logging fileLogger) throws IOException {
 
         connection = dbConnection;
         logger = fileLogger;
-        SERVIZIO = service;
+        servizio = service;
 
         //caricamento product, source e reason per il servizio
-        Properties properties = readProperties(SERVIZIO);
+        Properties properties = readProperties(servizio);
         sources = properties.getProperty("Sources").split(";");
         reasons = properties.getProperty("Reasons").split(";");
 
@@ -65,9 +67,13 @@ public class GenericServiceManagement {
         //inserisco i dati del csv nella tabella temporanea appropriata
         connection.riempiTabella(table, fileSystem + "/" + nomeFile);
 
-        String logText = "gestito " + report + " del servizio " + SERVIZIO +
-                " del " + date_to_string.substring(6, 8) + "/" + date_to_string.substring(4, 6) + "/" +
-                date_to_string.substring(0, 4);
+        String logText = String.format(
+                "Gestito %s del servizio %s del %s/%s/%s",
+                report, servizio,
+                dateToString.substring(6, 8),
+                dateToString.substring(4, 6),
+                dateToString.substring(0, 4)
+        );
 
         switch (report) {
             case "subscriptions":
@@ -87,8 +93,11 @@ public class GenericServiceManagement {
                 logger.printLog(logText, INFO);
                 return true;
             default:
-                logger.printLog("SERVIZIO: " + service + ", REPORT: " + report +
-                        ". IL SISTEMA HA RISCONTRATO UN ERRORE NELL'IDENTIFICARE IL FILE DA ELABORARE", FATAL);
+                logger.printLog(
+                        String.format("SERVIZIO: %s, REPORT: %s. Errore nell'identificare il file da elaborare.",
+                                service, report),
+                        FATAL
+                );
                 return false;
         }
     }
@@ -117,9 +126,11 @@ public class GenericServiceManagement {
                 sqlUpdateProducts[i] = " `sub_" + ec.getElement() + "`= '" + ec.getTotal() + "' ";
                 i++;
             } else {
-                logger.printLog("Attenzione: nel report subscriptions per il servizio " + SERVIZIO +
-                        " è stato trovato un prodotto (" + ec.getElement() + ") non appartenente al servizio. " +
-                        "Il prodotto è stato ignorato, se si desidera processarlo aggiornare le tabelle e la configurazione del servizio.", WARNING);
+                logger.printLog(
+                        String.format("Attenzione: nel report subscriptions per %s trovato prodotto non previsto (%s). Ignorato.",
+                                servizio, ec.getElement()),
+                        WARNING
+                );
             }
         }
 
@@ -139,23 +150,23 @@ public class GenericServiceManagement {
                 sqlUpdateSources[i] = " `sub_" + ec.getElement() + "`= '" + ec.getTotal() + "' ";
                 i++;
             } else {
-                logger.printLog("Attenzione: nel report subscriptions per il servizio " + SERVIZIO +
-                        " è stata trovata una fonte (" + ec.getElement() + ") non appartenente al servizio. " +
-                        "La fonte è stata ignorata, se si desidera processarla aggiornare le tabelle e la configurazione del servizio.", WARNING);
+                logger.printLog(
+                        String.format("Attenzione: nel report subscriptions per %s trovata fonte non prevista (%s). Ignorata.",
+                                servizio, ec.getElement()),
+                        WARNING
+                );
             }
         }
 
         if(containsNull(sqlUpdateProducts)){
-            logger.printLog("ATTENZIONE: i dati dei prodotti di sub ricevuti per il report di subscription per il servizio " + SERVIZIO +
-                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
+            logger.printLog(String.format("ATTENZIONE: i dati dei prodotti di sub ricevuti per il report di subscription per il servizio %s del giorno %s non corrispondono alla configurazione", servizio, dataLastReport), ERROR);
             return false;
         }else if(containsNull(sqlUpdateSources)){
-            logger.printLog("ATTENZIONE: i dati delle fonti di sub ricevuti per il report di subscription per il servizio " + SERVIZIO +
-                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
+            logger.printLog(String.format("ATTENZIONE: i dati delle fonti di sub ricevuti per il report di subscription per il servizio %s del giorno %s non corrispondono alla configurazione", servizio, dataLastReport), ERROR);
             return false;
         }else{
             //inserisco nella tabella
-            String sqlUpdateString = "UPDATE `" + SERVIZIO + "_subscriber` SET " +
+            String sqlUpdateString = "UPDATE `" + servizio + "_subscriber` SET " +
                     String.join(",", sqlUpdateProducts) + "," +
                     String.join(",", sqlUpdateSources) +
                     "WHERE `date` = '" + dataLastReport + "'";
@@ -189,9 +200,16 @@ public class GenericServiceManagement {
                 sqlUpdateProducts[i] = " `unsub_" + ec.getElement() + "`= '" + ec.getTotal() + "' ";
                 i++;
             } else {
-                logger.printLog("Attenzione: nel report unsubscriptions per il servizio " + SERVIZIO +
-                        " è stato trovato un prodotto (" + ec.getElement() + ") non appartenente al servizio. " +
-                        "Il prodotto è stato ignorato, se si desidera processarlo aggiornare le tabelle e la configurazione del servizio.", WARNING);
+                logger.printLog(
+                        String.format(
+                                "Attenzione: nel report unsubscriptions per il servizio %s è stato trovato un prodotto (%s) "
+                                        + "non appartenente al servizio. Il prodotto è stato ignorato; se si desidera processarlo "
+                                        + "aggiornare le tabelle e la configurazione del servizio.",
+                                servizio,
+                                ec.getElement()
+                        ),
+                        WARNING
+                );
             }
         }
 
@@ -211,9 +229,16 @@ public class GenericServiceManagement {
                 sqlUpdateSources[i] = " `unsub_" + ec.getElement() + "`= '" + ec.getTotal() + "' ";
                 i++;
             } else {
-                logger.printLog("Attenzione: nel report unsubscriptions per il servizio " + SERVIZIO +
-                        " è stata trovata una fonte (" + ec.getElement() + ") non appartenente al servizio. " +
-                        "La fonte è stata ignorata, se si desidera processarla aggiornare le tabelle e la configurazione del servizio.", WARNING);
+                logger.printLog(
+                        String.format(
+                                "Attenzione: nel report unsubscriptions per il servizio %s è stata trovata una fonte (%s) "
+                                        + "non appartenente al servizio. La fonte è stata ignorata; se si desidera processarla "
+                                        + "aggiornare le tabelle e la configurazione del servizio.",
+                                servizio,
+                                ec.getElement()
+                        ),
+                        WARNING
+                );
             }
         }
 
@@ -237,33 +262,36 @@ public class GenericServiceManagement {
                 }
                 i++;
             } else {
-                logger.printLog("Attenzione: nel report unsubscriptions per il servizio " + SERVIZIO +
-                        " è stata trovata una motivazione (" + ec.getElement() + ") non appartenente al servizio. " +
-                        "La motivazione è stata ignorata, se si desidera processarla aggiornare le tabelle e la configurazione del servizio.", WARNING);
+                logger.printLog(String.format("Attenzione: nel report unsubscriptions per il servizio %s" +
+                        " è stata trovata una motivazione (%s) non appartenente al servizio. " +
+                        "La motivazione è stata ignorata, se si desidera processarla aggiornare le tabelle e la configurazione del servizio.", servizio, ec.getElement()), WARNING);
             }
         }
 
-        if(containsNull(sqlUpdateProducts)){
-            logger.printLog("ATTENZIONE: i dati dei prodotti di unsub ricevuti per il report di subscription per il servizio " + SERVIZIO +
-                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
-            return false;
-        }else if(containsNull(sqlUpdateSources)){
-            logger.printLog("ATTENZIONE: i dati delle fonti di unsub ricevuti per il report di subscription per il servizio " + SERVIZIO +
-                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
-            return false;
-        }else if(containsNull(sqlUpdateReasons)){
-            logger.printLog("ATTENZIONE: i dati delle motivazioni di unsub ricevuti per il report di subscription per il servizio " + SERVIZIO +
-                    " del giorno " + dataLastReport + " non corrispondono alla configurazione", ERROR);
-            return false;
-        }else{
+        if(checkNull(sqlUpdateProducts, sqlUpdateSources, sqlUpdateReasons, dataLastReport)){
             //inserisco nella tabella
-            String sqlUpdateString = "UPDATE `" + SERVIZIO + "_subscriber` SET " +
+            String sqlUpdateString = "UPDATE `" + servizio + "_subscriber` SET " +
                     String.join(",", sqlUpdateProducts) + "," +
                     String.join(",", sqlUpdateSources) + "," +
                     String.join(",", sqlUpdateReasons) +
                     "WHERE `date` = '" + dataLastReport + "'";
 
             connection.executeSqlInsertUpdate(sqlUpdateString);
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean checkNull(String[] sqlUpdateProducts, String[] sqlUpdateSources, String[] sqlUpdateReasons, Date dataLastReport){
+        if(containsNull(sqlUpdateProducts)){
+            logger.printLog(String.format(WARNING_TXT, "dei prodotti di unsub", servizio, dataLastReport), ERROR);
+            return false;
+        }else if(containsNull(sqlUpdateSources)){
+            logger.printLog(String.format(WARNING_TXT, "delle fonti di unsub", servizio, dataLastReport), ERROR);
+            return false;
+        }else if(containsNull(sqlUpdateReasons)){
+            logger.printLog(String.format(WARNING_TXT, "delle motivazioni di unsub", servizio, dataLastReport), ERROR);
+            return false;
         }
         return true;
     }
@@ -299,7 +327,7 @@ public class GenericServiceManagement {
                     "WHERE `product`='" + products[i].getProductName() + "' AND " +
                     "`payout` = '" + products[i].getProductPrice() + "'";
 
-            dayBillsFull = connection.executeSqlQueryInt(query, "conta");
+            dayBillsFull = connection.executeSqlQueryInt(query, CONTA);
 
             totalRevenue += dayBillsFull * products[i].getProductPrice();
 
@@ -309,7 +337,7 @@ public class GenericServiceManagement {
                     "WHERE `product`='" + products[i].getProductName() + "' AND " +
                     "`payout` < '" + products[i].getProductPrice() + "'";
 
-            dayBillsPartial = connection.executeSqlQueryInt(query, "conta");
+            dayBillsPartial = connection.executeSqlQueryInt(query, CONTA);
 
             //somma pagamenti parziali
             query = "SELECT SUM(`payout`) as somma " +
@@ -325,7 +353,7 @@ public class GenericServiceManagement {
                     "WHERE `product`='" + products[i].getProductName() + "' AND " +
                     "`payout` = '0'";
 
-            dayBillsZero = connection.executeSqlQueryInt(query, "conta");
+            dayBillsZero = connection.executeSqlQueryInt(query, CONTA);
 
             sqlUpdateProducts[i] = " `gross_" + products[i].getProductName() + "`= '" + (dayBillsFull + dayBillsPartial + dayBillsZero) + "' ,  " +
                     "`full_" + products[i].getProductName() + "`= '" + dayBillsFull + "', " +
@@ -336,7 +364,7 @@ public class GenericServiceManagement {
 
         }
 
-        String sqlUpdateString = "UPDATE `" + SERVIZIO + "_billing` SET " +
+        String sqlUpdateString = "UPDATE `" + servizio + "_billing` SET " +
                 String.join(",", sqlUpdateProducts) + ", " +
                 "`expect_revenue` = '" + expectRevenue + "', " +
                 "`real_revenue` = '" + totalRevenue + "' " +

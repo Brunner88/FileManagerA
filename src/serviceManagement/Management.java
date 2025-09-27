@@ -5,8 +5,6 @@ import utility.SqlFunction;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.sql.SQLException;
-import java.text.ParseException;
 
 import static utility.Logging.logLevel.ERROR;
 
@@ -29,9 +27,8 @@ public class Management {
      *
      * @param sqlDate       data in formato sql
      * @param specialManage boolean che definisce se il servizio necessita di una gestione particolare
-     * @throws SQLException
      */
-    public void openDay(Date sqlDate, boolean specialManage) throws SQLException {
+    public void openDay(Date sqlDate, boolean specialManage) {
 
         if (!specialManage) {
             connection.insertDate(sqlDate, service + "_subscriber");
@@ -49,30 +46,27 @@ public class Management {
         }
     }
     /**
-     * gestisce il manage dei servizi assegnando a ogni servizio la classe di elaborazione appropriata
+     * Gestisce il manage dei servizi assegnando a ogni servizio la classe di elaborazione appropriata
      *
      * @param report            tipo rapporto (Subscription...)
      * @param fileSystem        locazione del file da elaborare
      * @param nomeFile          nome file da elaborare
-     * @param date_to_string    data da elaborare in formato string
+     * @param dateToString    data da elaborare in formato string
      * @param sqlDateLastReport data da elaborare in formato sql
      * @param specialManage     boolean che definisce se il servizio necessita di una gestione particolare
      * @return boolean true se la gestione è andata bene, false in caso contrario
-     * @throws ClassNotFoundException
-     * @throws SQLException
-     * @throws IOException
-     * @throws ParseException
+     * @throws IOException se non trova il file da gestire
      */
-    public boolean manage(String report, String table, String fileSystem, String nomeFile, String date_to_string, java.sql.Date sqlDateLastReport, boolean specialManage) throws ClassNotFoundException, SQLException, IOException, ParseException {
+    public boolean manage(String report, String table, String fileSystem, String nomeFile, String dateToString, java.sql.Date sqlDateLastReport, boolean specialManage) throws IOException {
 
         if (!specialManage) {
 
-            return GenericServiceManagement.gestisci(service, report, table, fileSystem, nomeFile, date_to_string, sqlDateLastReport, connection, logger);
+            return GenericServiceManagement.gestisci(service, report, table, fileSystem, nomeFile, dateToString, sqlDateLastReport, connection, logger);
 
         } else {
             switch (service) {
                 case "betaservice":
-                    return BetaServiceManagement.gestisci(report, table, fileSystem, nomeFile, date_to_string, sqlDateLastReport, connection, logger);
+                    return BetaServiceManagement.gestisci(report, table, fileSystem, nomeFile, dateToString, sqlDateLastReport, connection, logger);
 
                 //eventuali altri servizi
 

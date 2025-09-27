@@ -18,8 +18,8 @@ public class Logging {
         FATAL
     }
 
-    private static String LOG_FILE_NAME;
-    private static logLevel LOG_LEVEL_SELECTED;
+    private String logFileName;
+    private logLevel logLevelSelected;
 
     /**
      * Oggetto per la creazione di log, definisce il nome del file e il livello di profondità dei log
@@ -30,19 +30,19 @@ public class Logging {
 
         switch (level.toUpperCase()) {
             case "INFO":
-                LOG_LEVEL_SELECTED = logLevel.INFO;
+                logLevelSelected = logLevel.INFO;
                 break;
             case "WARNING":
-                LOG_LEVEL_SELECTED = logLevel.WARNING;
+                logLevelSelected = logLevel.WARNING;
                 break;
             case "ERROR":
-                LOG_LEVEL_SELECTED = logLevel.ERROR;
+                logLevelSelected = logLevel.ERROR;
                 break;
             case "FATAL":
-                LOG_LEVEL_SELECTED = logLevel.FATAL;
+                logLevelSelected = logLevel.FATAL;
                 break;
             default:
-                LOG_LEVEL_SELECTED = logLevel.DEBUG;
+                logLevelSelected = logLevel.DEBUG;
                 break;
         }
 
@@ -50,7 +50,7 @@ public class Logging {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         String date = sdf.format(endDate);
 
-        LOG_FILE_NAME = "logs/" + date + "_fileManager.log";
+        logFileName = "logs/" + date + "_fileManager.log";
     }
 
     /**
@@ -60,7 +60,7 @@ public class Logging {
      * @param level Enum logLevel che comunica il livello di profondità del singolo log
      */
     public void printLog(String text, logLevel level) {
-        switch (LOG_LEVEL_SELECTED) {
+        switch (logLevelSelected) {
             case DEBUG:
                 writeLog(text, level);
                 break;
@@ -104,7 +104,7 @@ public class Logging {
             String timestampString = now.format(formatter);
 
             // Credo il filewriter (append true per aggiungere in coda)
-            FileWriter fileWriter = new FileWriter(LOG_FILE_NAME, true);
+            FileWriter fileWriter = new FileWriter(logFileName, true);
 
             // BufferedWriter per scrivere il file
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
