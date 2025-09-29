@@ -5,11 +5,12 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit;
 }
 ?>
+
 <!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <title>Billing – Analisi</title>
+  <title>AlphaService Billing – Analisi</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; background:#f5f5f5; margin:30px; }
@@ -28,7 +29,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
   </style>
 </head>
 <body>
-  <h1>Billing</h1>
+  <h1>GammaService Billing</h1>
   <div id="menu"></div>
   <script src="menu.js"></script>
   <div class="chart-container">
@@ -59,7 +60,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     let chart2 = null;
 
     async function loadData(period = "week") {
-      const res = await fetch(`../BE/get_data_billing.php?period=${period}`);
+      const res = await fetch(`../BE/get_data_billing_gammaservice.php?period=${period}`);
       const json = await res.json();
 
       const labels = json.histogram.labels;
