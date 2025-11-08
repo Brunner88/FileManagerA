@@ -1,0 +1,24 @@
+<component name="libraryTable">
+  <library name="mysql-connector-java-5.1">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/com/mysql/jdbc" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/com/mysql/jdbc/jdbc2/optional" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/com/mysql/jdbc/jmx" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/com/mysql/jdbc/log" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/com/mysql/jdbc/profiler" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/com/mysql/jdbc/util" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/org/gjt/mm/mysql" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/testsuite" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/testsuite/perf" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/testsuite/regression" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/testsuite/regression/jdbc4" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/testsuite/simple" />
+      <root url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29/src/testsuite/simple/jdbc4" />
+    </SOURCES>
+    <jarDirectory url="file://$PROJECT_DIR$/lib/mysql-connector-java-5.1.29" recursive="false" />
+  </library>
+</component>

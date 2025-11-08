@@ -8,27 +8,45 @@ import java.util.List;
 import java.util.Properties;
 
 import utility.Logging;
+import utility.SqlFunction;
+
 import static utility.Utils.*;
 
 import static utility.Logging.logLevel.*;
+import static utility.Utils.readProperties;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         Properties serviceProperties = readServicesProperties();
         String[] services = serviceProperties.getProperty("services").split(";");
 
-        System.out.println(services[0]);
-        System.out.println(services[1]);
-        System.out.println(services[2]);
-
         Logging logger = new Logging(serviceProperties.getProperty("logLevel"));
         logger.printLog("Inizio processo gestione", DEBUG);
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String endDateString = getIeri(sdf);
+
+        for (String servizio : services) {
+            logger.printLog("Inizio gestione servizio " + servizio, INFO);
+
+            Properties props = readProperties(servizio);
+            String startDateString = props.getProperty("primaData");
+
+            SqlFunction db = new SqlFunction(logger,
+                    props.getProperty("db"),
+                    props.getProperty("dbUser"),
+                    props.getProperty("dbPass")
+            );
+
+            if (!db.checkServiceStatus(servizio)) {
+                db.insertInLastReport(props.getProperty("Report").split(";"), servizio, startDateString);
+            }
+        }
+    }
+
+    private static String getIeri(SimpleDateFormat sdf) {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_MONTH, -1);
-        String endDateString = sdf.format(calendar.getTime());
-
-        System.out.println(endDateString);
+        return sdf.format(calendar.getTime());
     }
 }
