@@ -46,4 +46,47 @@ public class Management {
             }
         }
     }
+
+    /**
+     * Gestisce la chiusura di un record, settando lo stato processed di una riga della tabella subscriber
+     *
+     * @param date          data in formato yyyy-mm-dd
+     * @param specialManage boolean che definisce se il servizio necessita di una gestione particolare
+     */
+    public void closeDay(String date, boolean specialManage) {
+
+        if (!specialManage) {
+            if (connection.isDayComplete(service, date)) {
+                String sqlUpdate = "UPDATE `" + service + "_subscriber` SET `processed` = '1'  WHERE `date` = '" + date + "'";
+                if (connection.checkExistDate(service + "_subscriber", date)) {
+                    connection.executeSqlInsertUpdate(sqlUpdate);
+                } else {
+                    logger.printLog("Recupero id tabella subscriber per chiusura report giornaliero fallito. " +
+                            "La tabella non può essere vuota durante questa operazione", ERROR);
+                    System.exit(1);
+                }
+                sqlUpdate = "UPDATE `" + service + "_billing` SET `processed` = '1'  WHERE `date` = '" + date + "'";
+                if (connection.checkExistDate(service + "_billing", date)) {
+                    connection.executeSqlInsertUpdate(sqlUpdate);
+                } else {
+                    logger.printLog("Recupero id tabella billing per chiusura report giornaliero fallito. " +
+                            "La tabella non può essere vuota durante questa operazione", ERROR);
+                    System.exit(1);
+                }
+            } else {
+                connection.reopenDay(service, date);
+            }
+        } else {
+            //switch preparato nel caso si dovessero aggiungere gestioni particolari
+            switch (service) {
+                // eventuali altri servizi
+
+                default:
+                    logger.printLog("IL SISTEMA NON HA RICONOSCIUTO PER QUALE SERVIZIO COMPLETARE IL GIORNO.", ERROR);
+                    break;
+            }
+        }
+
+
+    }
 }

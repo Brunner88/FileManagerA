@@ -375,4 +375,134 @@ public class SqlFunction {
                 "WHERE `date` = '" + dataDaProcessare + "'"
         );
     }
+
+    /**
+     * Aggiorna la tabella last report impostando il giorno passato per il servizio su quel rapporto
+     *
+     * @param report           rapporto
+     * @param servizio         servizio
+     * @param dataDaProcessare data in formato yyyyMMdd
+     */
+    public void updateLastReport(String report, String servizio, String dataDaProcessare) {
+
+        executeSqlInsertUpdate("UPDATE `last_report` " +
+                "SET `" + report + "` = '" + dataDaProcessare + "' " +
+                "WHERE `servizio` = '" + servizio + "';"
+        );
+    }
+
+    /**
+     * legge tutte le date di un servizio dalla tabella last_report e controlla se sono tutte allineate alla più recente
+     *
+     * @param report nome del report (subscription, unsubscription...)
+     * @return boolean contenente true se nono allineate, false altrimenti
+     */
+    public boolean confrontaDataString(String servizio, String report) {
+
+        String res = "";
+
+        String sql = "SELECT `subscriptions`,`unsubscriptions`,`billing` " +
+                "FROM `last_report` " +
+                "WHERE `servizio` = '" + servizio + "'";
+
+        logger.printLog("confrontaDataString: " + sql, DEBUG);
+
+        try {
+            Statement stmt = connection.createStatement();
+
+            res = confrontaDataStringExecute(stmt, sql);
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(NO_CONNECTION, FATAL);
+            System.exit(1);
+        }
+
+        String[] split = res.split("-");
+
+        boolean flag = true;
+        int val = readDateString(report, servizio);
+        for (int j = 1; j < split.length && flag; j++) {
+            if (Integer.parseInt(split[j]) < val)
+                flag = false;
+        }
+
+        return flag;
+    }
+
+    private String confrontaDataStringExecute(Statement stmt, String sql){
+
+        String res = "";
+
+        try {
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                res = rs.getString("subscriptions") + "-" + rs.getString("unsubscriptions") + "-" + rs.getString("billing");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(IMPOSSIBLE + sql, ERROR);
+            System.exit(1);
+        }
+
+        return res;
+    }
+
+    /**
+     * controlla se le righe della tabella servizio_subscriber e della tabella servizio_billing sono entrambe completabili ( != 2)
+     *
+     * @param servizio il servizio da controllare
+     * @param data     la data da controllare
+     * @return boolean true se righe entrambe diverse da 2, false altrimenti
+     */
+    public boolean isDayComplete(String servizio, String data) {
+
+        int sub = executeSqlQueryInt("SELECT processed " +
+                "FROM `" + servizio + "_subscriber` " +
+                "WHERE `date` LIKE '" + data + "'", PROCESSED);
+
+        int bill = executeSqlQueryInt("SELECT processed " +
+                "FROM `" + servizio + "_billing` " +
+                "WHERE `date` LIKE '" + data + "'", PROCESSED);
+
+        return sub != 2 && bill != 2;
+
+    }
+
+    /**
+     * Controlla se esiste una riga con la data specificata nella tabella
+     * @param tabella tabella da controllare
+     * @param data data da cercare in formato yyyy-mm-dd
+     * @return boolean true se esiste, false altrimenti
+     */
+    public boolean checkExistDate(String tabella, String data) {
+
+        String sql = "SELECT `id_sub` " +
+                "FROM `" + tabella + "` " +
+                "WHERE `date` = '" + data + "'";
+
+        int res = executeSqlQueryInt(sql, "id_sub");
+
+        return res > 0;
+    }
+
+    /**
+     * Imposta le righe della tabella servizio_subscriber e della tabella servizio_billing segnate come non processate a 0 (rendendole riprocessabili in futuro)
+     *
+     * @param servizio nome servizio
+     * @param data     data da impostare in formato yyyy-mm-dd
+     */
+    public void reopenDay(String servizio, String data) {
+
+        executeSqlInsertUpdate("UPDATE `" + servizio + "_subscriber` " +
+                "SET `processed` = '0'  " +
+                "WHERE `date` = '" + data + "'"
+        );
+
+        executeSqlInsertUpdate("UPDATE `" + servizio + "_billing` " +
+                "SET `processed` = '0'  " +
+                "WHERE `date` = '" + data + "'"
+        );
+    }
 }
