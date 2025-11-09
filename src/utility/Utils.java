@@ -65,4 +65,51 @@ public class Utils {
 
         return calendar.getTime();
     }
+
+    /**
+     * Controlla se l'array di stringhe passato contiene elementi null
+     *
+     * @param arrayToCheck array da controllare
+     * @return true se contiene almeno un elemento null, false altrimenti
+     */
+    public static boolean containsNull(String[] arrayToCheck) {
+        for (String element : arrayToCheck) {
+            if (element == null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Controlla se un prodotto è contenuta in un array di Product
+     *
+     * @param element      stringa da cercare
+     * @param arrayToCheck array di Product da controllare
+     * @return true se viene trovata, false altrimenti
+     */
+    public static boolean isInProductsArray(String element, Product[] arrayToCheck) {
+        for (Product target : arrayToCheck) {
+            if (element.equals(target.getProductName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Controlla se una stringa è contenuta in un array di stringhe
+     *
+     * @param element      stringa da cercare
+     * @param arrayToCheck array da controllare
+     * @return true se viene trovata, false altrimenti
+     */
+    public static boolean isInArray(String element, String[] arrayToCheck) {
+        for (String target : arrayToCheck) {
+            if (element.equals(target)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

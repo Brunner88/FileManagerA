@@ -1,7 +1,9 @@
 package utility;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static utility.Logging.logLevel.*;
 
@@ -577,5 +579,54 @@ public class SqlFunction {
             logger.printLog("Errore nel caricamento della tabella " + tab, ERROR);
             System.exit(1);
         }
+    }
+
+    /**
+     * Esegue una interrogazione del db (due colonne, più righe)
+     *
+     * @param sql la query da eseguire
+     * @param columnOne la prima colonna da recuperare (deve tornare un int)
+     * @param columnTwo la seconda colonna da recuperare (deve tornare una stringa)
+     * @return lista di oggetti ElementCount recuperata
+     */
+    public List<ElementCount> executeSqlQueryElementCount(String sql, String columnOne, String columnTwo) {
+
+        List<ElementCount> res = new ArrayList<>();
+
+        try {
+            logger.printLog("executeSqlQueryElementCount: " + sql, DEBUG);
+            Statement stmt = connection.createStatement();
+
+            res = executeStatementElementCount(stmt, sql, columnOne, columnTwo);
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(NO_CONNECTION, FATAL);
+            System.exit(1);
+        }
+
+        logger.printLog(RESULT + res, DEBUG);
+        return res;
+    }
+
+    private List<ElementCount> executeStatementElementCount(Statement stmt, String sql, String columnOne, String columnTwo){
+
+        List<ElementCount> res = new ArrayList<>();
+
+        try {
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                int total = rs.getInt(columnOne);
+                String element = rs.getString(columnTwo);
+                res.add(new ElementCount(element, total));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            logger.printLog(IMPOSSIBLE + sql, ERROR);
+            System.exit(1);
+        }
+
+        return res;
     }
 }
