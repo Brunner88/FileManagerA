@@ -3,6 +3,8 @@ package utility;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
 
 public class Utils {
@@ -46,5 +48,21 @@ public class Utils {
         props.load(fis);
 
         return props;
+    }
+
+    /**
+     * Aumenta o diminuisce una data del valore k di giorni
+     *
+     * @param currentDate data da modificare
+     * @param k           numero di giorni da aggiungere o sottrarre
+     * @return
+     */
+    public static Date alterDate(Date currentDate, int k) {
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.DAY_OF_YEAR, k);
+
+        return calendar.getTime();
     }
 }
