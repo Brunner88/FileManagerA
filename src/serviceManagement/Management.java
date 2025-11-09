@@ -71,6 +71,8 @@ public class Management {
 
         } else {
             switch (service) {
+                case "betaservice":
+                    return BetaServiceManagement.gestisci(report, table, fileSystem, nomeFile, date_to_string, sqlDateLastReport, connection, logger);
 
                 //eventuali altri servizi
 
