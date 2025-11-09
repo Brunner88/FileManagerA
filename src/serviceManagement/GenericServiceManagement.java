@@ -83,7 +83,8 @@ public class GenericServiceManagement {
                 }
                 return false;
             case "billing":
-
+                gestisciBilling(sqlDateLastReport);
+                logger.printLog(logText, INFO);
                 return true;
             default:
                 logger.printLog("SERVIZIO: " + service + ", REPORT: " + report +
@@ -265,5 +266,82 @@ public class GenericServiceManagement {
             connection.executeSqlInsertUpdate(sqlUpdateString);
         }
         return true;
+    }
+
+    /**
+     * gestisce la lettura della tabella billing temporanea e l'inserimento dei dati del rapporto di billing
+     * nella tabella SERVIZIO_billing
+     *
+     * @param dataLastReport data in formato sql Date in cui verranno inseriti i dati
+     */
+    private static void gestisciBilling(Date dataLastReport) {
+
+        String[] sqlUpdateProducts = new String[products.length];
+
+        int dayBillsFull;
+
+        int dayBillsPartial;
+
+        int dayBillsZero;
+
+        int expectRevenue = 0;
+
+        int totalRevenue = 0;
+
+        String query;
+
+        //conteggio n° pagamenti ricevuti per prodotto
+        for (int i = 0; i < products.length; i++) {
+
+            //pagamento periodico full
+            query = "SELECT count(`contractCode`) as conta " +
+                    "FROM `billing_temp` " +
+                    "WHERE `product`='" + products[i].getProductName() + "' AND " +
+                    "`payout` = '" + products[i].getProductPrice() + "'";
+
+            dayBillsFull = connection.executeSqlQueryInt(query, "conta");
+
+            totalRevenue += dayBillsFull * products[i].getProductPrice();
+
+            //pagamento periodico parziale
+            query = "SELECT count(`contractCode`) as conta " +
+                    "FROM `billing_temp` " +
+                    "WHERE `product`='" + products[i].getProductName() + "' AND " +
+                    "`payout` < '" + products[i].getProductPrice() + "'";
+
+            dayBillsPartial = connection.executeSqlQueryInt(query, "conta");
+
+            //somma pagamenti parziali
+            query = "SELECT SUM(`payout`) as somma " +
+                    "FROM `billing_temp` " +
+                    "WHERE `product` = '" + products[i].getProductName() + "' " +
+                    "AND `payout` < '" + products[i].getProductPrice() + "'";
+
+            totalRevenue += connection.executeSqlQueryInt(query, "somma");
+
+            //pagamento periodico nullo
+            query = "SELECT count(`contractCode`) as conta " +
+                    "FROM `billing_temp` " +
+                    "WHERE `product`='" + products[i].getProductName() + "' AND " +
+                    "`payout` = '0'";
+
+            dayBillsZero = connection.executeSqlQueryInt(query, "conta");
+
+            sqlUpdateProducts[i] = " `gross_" + products[i].getProductName() + "`= '" + (dayBillsFull + dayBillsPartial + dayBillsZero) + "' ,  " +
+                    "`full_" + products[i].getProductName() + "`= '" + dayBillsFull + "', " +
+                    "`partial_" + products[i].getProductName() + "`= '" + dayBillsPartial + "', " +
+                    "`failed_" + products[i].getProductName() + "`= '" + dayBillsZero + "' ";
+
+            expectRevenue += (dayBillsFull + dayBillsPartial + dayBillsZero) * products[i].getProductPrice();
+
+        }
+
+        String sqlUpdateString = "UPDATE `" + SERVIZIO + "_billing` SET " +
+                String.join(",", sqlUpdateProducts) + ", " +
+                "`expect_revenue` = '" + expectRevenue + "', " +
+                "`real_revenue` = '" + totalRevenue + "' " +
+                "WHERE `date` = '" + dataLastReport + "'";
+
+        connection.executeSqlInsertUpdate(sqlUpdateString);
     }
 }
