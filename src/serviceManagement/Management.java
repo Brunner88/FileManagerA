@@ -3,8 +3,10 @@ package serviceManagement;
 import utility.Logging;
 import utility.SqlFunction;
 
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.text.ParseException;
 
 import static utility.Logging.logLevel.ERROR;
 
@@ -46,7 +48,38 @@ public class Management {
             }
         }
     }
+    /**
+     * gestisce il manage dei servizi assegnando a ogni servizio la classe di elaborazione appropriata
+     *
+     * @param report            tipo rapporto (Subscription...)
+     * @param fileSystem        locazione del file da elaborare
+     * @param nomeFile          nome file da elaborare
+     * @param date_to_string    data da elaborare in formato string
+     * @param sqlDateLastReport data da elaborare in formato sql
+     * @param specialManage     boolean che definisce se il servizio necessita di una gestione particolare
+     * @return boolean true se la gestione è andata bene, false in caso contrario
+     * @throws ClassNotFoundException
+     * @throws SQLException
+     * @throws IOException
+     * @throws ParseException
+     */
+    public boolean manage(String report, String table, String fileSystem, String nomeFile, String date_to_string, java.sql.Date sqlDateLastReport, boolean specialManage) throws ClassNotFoundException, SQLException, IOException, ParseException {
 
+        if (!specialManage) {
+
+            return GenericServiceManagement.gestisci(service, report, table, fileSystem, nomeFile, date_to_string, sqlDateLastReport, connection, logger);
+
+        } else {
+            switch (service) {
+
+                //eventuali altri servizi
+
+                default:
+                    logger.printLog("IL SISTEMA HA RISCONTRATO UN ERRORE NELL'IDENTIFICARE IL SERVIZIO DA ELABORARE", ERROR);
+                    return false;
+            }
+        }
+    }
     /**
      * Gestisce la chiusura di un record, settando lo stato processed di una riga della tabella subscriber
      *
