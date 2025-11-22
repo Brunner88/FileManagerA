@@ -265,7 +265,7 @@ public class SqlFunction {
      * @param data     data da cercare (formato yyyyMMdd)
      * @return boolean true se presente, false altrimenti
      */
-    public boolean existDate(String servizio, String data) {
+    public boolean existsDate(String servizio, String data) {
 
         int sub = executeSqlQueryInt("SELECT COUNT(`date`) as found " +
                 "FROM `" + servizio + "_subscriber` " +

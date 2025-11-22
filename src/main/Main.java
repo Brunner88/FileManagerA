@@ -119,7 +119,7 @@ public class Main {
         java.sql.Date sqlDate = new java.sql.Date(startingDate.getTime());
         String dataSql = anno + "-" + mese + "-" + dataDaProcessare.substring(6, 8);
 
-        if (!db.existDate(servizio, dataSql)) manage.openDay(sqlDate, specialManage);
+        if (!db.existsDate(servizio, dataSql)) manage.openDay(sqlDate, specialManage);
 
         if (!db.alreadyProcessed(servizio, dataSql)) {
             String fileSystem = props.getProperty("repository") + "/" + report + "/" + anno + "/" + mese;
